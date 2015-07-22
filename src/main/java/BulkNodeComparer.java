@@ -3,6 +3,8 @@ import com.hp.hpl.jena.rdf.model.*;
 import com.hp.hpl.jena.tdb.*;
 import org.apache.poi.hssf.usermodel.*;
 import org.apache.poi.ss.usermodel.*;
+
+import javax.xml.ws.http.HTTPException;
 import java.io.*;
 import java.nio.file.Files;
 import java.util.*;
@@ -62,7 +64,6 @@ public class BulkNodeComparer {
         String file = "./bulkdata.txt";
 
         BufferedReader reader = null;
-        //int num = 0;
 
         try {
             reader = new BufferedReader(new FileReader(file));
@@ -70,18 +71,12 @@ public class BulkNodeComparer {
 
             while ((line = reader.readLine()) != null) {
                 names.add(line);
-                //populatetdb(geturistring(line));
-                //num = num + 1;
             }
         } catch (FileNotFoundException ex) {
 
         } catch (IOException ex) {
 
         }
-
-        // now we can make our matrix
-        //return num;
-
     }
 
 
@@ -96,6 +91,7 @@ public class BulkNodeComparer {
 
         tdb.removeAll();
 
+        // go through all the names and grab the data
         while (n < names.size()) {
             String subject = geturistring(names.get(n));
 
@@ -107,7 +103,14 @@ public class BulkNodeComparer {
             Query query = QueryFactory.create(q);
             ResultSet r = null;
             QueryExecution qex = QueryExecutionFactory.sparqlService("http://dbpedia.org/sparql", query);
-            r = qex.execSelect();
+            try {
+                r = qex.execSelect();
+            }
+            catch (HTTPException e) {
+                System.out.println("There is an error with dbpedia. Please try again when the pages you require" +
+                        " are no longer under maintenance.");
+            }
+
 
             // Add all the data to the tdb
             Resource sub = ResourceFactory.createResource("http://dbpedia.org/resource/" + subject);
